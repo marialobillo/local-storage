@@ -8,16 +8,47 @@ class App extends Component {
       hits: null
     };
   }
+
+  onSearch = (e) => {
+    e.preventDefault();
+
+    const { value } = this.input;
+    const cacheHits = localStorage.getItem(value);
+    if(cacheHits){
+      this.setState({ hits: JSON.parse(cacheHits)});
+      return;
+    }
+
+    if(value === ''){
+      return;
+    }
+    fetch('https://hn.algolia.com/api/v1/search?query=' + value)
+      .then(response => response.json())
+      .then(result => this.onSetResult(result, value));
+  }
+
+  onSetResult = (result, key) => {
+    localStorage.setItem(key, JSON.stringfy(result.hits));
+    this.setState({ hits: result.hits })
+  }
   render() {
     return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to React</h1>
-        </header>
-        <p className="App-intro">
-          To get started, edit <code>src/App.js</code> and save to reload.
+      <div>
+        <h1>Search Hacker News with Local Storage</h1>
+        <p>There shouldn't be a second network request,
+          when you search for something twice.
         </p>
+
+        <form onSubmit={this.onSearch}>
+          <input type="text" ref={node => this.input = node} />
+          <button type="submit">Search</button>
+        </form>
+
+        {
+          this.state.hits &&
+          this.state.hits.map(item => <div key={item.objectID}>{item.title}</div>)
+
+        }
       </div>
     );
   }
